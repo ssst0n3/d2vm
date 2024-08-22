@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 	"text/template"
 
 	"github.com/sirupsen/logrus"
@@ -26,6 +27,9 @@ import (
 
 //go:embed templates/ubuntu.Dockerfile
 var ubuntuDockerfile string
+
+//go:embed templates/ubuntu16.Dockerfile
+var ubuntu16Dockerfile string
 
 //go:embed templates/debian.Dockerfile
 var debianDockerfile string
@@ -41,6 +45,7 @@ var (
 	debianDockerfileTemplate = template.Must(template.New("debian.Dockerfile").Funcs(tplFuncs).Parse(debianDockerfile))
 	alpineDockerfileTemplate = template.Must(template.New("alpine.Dockerfile").Funcs(tplFuncs).Parse(alpineDockerfile))
 	centOSDockerfileTemplate = template.Must(template.New("centos.Dockerfile").Funcs(tplFuncs).Parse(centOSDockerfile))
+	ubuntu16DockerfileTemplate = template.Must(template.New("ubuntu14.Dockerfile").Funcs(tplFuncs).Parse(ubuntu16Dockerfile))
 )
 
 type NetworkManager string
@@ -92,6 +97,14 @@ func NewDockerfile(release OSRelease, img, password string, networkManager Netwo
 	case ReleaseUbuntu:
 		d.tmpl = ubuntuDockerfileTemplate
 		net = NetworkManagerNetplan
+		switch {
+		case strings.HasPrefix(release.VersionID, "16."):
+			d.tmpl = ubuntu16DockerfileTemplate
+			net = NetworkManagerIfupdown2
+		default:
+			d.tmpl = ubuntuDockerfileTemplate
+			net = NetworkManagerNetplan
+		}
 	case ReleaseAlpine:
 		d.tmpl = alpineDockerfileTemplate
 		net = NetworkManagerIfupdown2
