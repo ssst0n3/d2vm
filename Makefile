@@ -37,7 +37,7 @@ bin:
 clean-bin:
 	@rm -rf $(BIN)
 
-DOCKER_IMAGE := linkacloud/d2vm
+DOCKER_IMAGE := ssst0n3/d2vm
 
 docker: docker-build docker-push
 
