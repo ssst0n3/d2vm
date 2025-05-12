@@ -13,6 +13,9 @@ RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* && \
 
 # See https://bugzilla.redhat.com/show_bug.cgi?id=1917213
 RUN yum install -y \
+{{ if le $version 8 }}
+    grubby centos-linux-release \
+{{ end }}
     kernel \
     systemd \
     NetworkManager \
