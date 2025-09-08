@@ -91,6 +91,7 @@ var (
 				d2vm.WithKeepCache(keepCache),
 				d2vm.WithPlatform(platform),
 				d2vm.WithPull(pull),
+				d2vm.WithKernel(kernel),
 			); err != nil {
 				return err
 			}

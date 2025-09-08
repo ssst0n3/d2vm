@@ -69,6 +69,7 @@ type Dockerfile struct {
 	GrubBIOS       bool
 	GrubEFI        bool
 	tmpl           *template.Template
+	Kernel         bool
 }
 
 func (d Dockerfile) Grub() bool {
@@ -79,8 +80,8 @@ func (d Dockerfile) Render(w io.Writer) error {
 	return d.tmpl.Execute(w, d)
 }
 
-func NewDockerfile(release OSRelease, img, password string, networkManager NetworkManager, luks, grubBIOS, grubEFI bool) (Dockerfile, error) {
-	d := Dockerfile{Release: release, Image: img, Password: password, NetworkManager: networkManager, Luks: luks, GrubBIOS: grubBIOS, GrubEFI: grubEFI}
+func NewDockerfile(release OSRelease, img, password string, networkManager NetworkManager, luks, grubBIOS, grubEFI, kernel bool) (Dockerfile, error) {
+	d := Dockerfile{Release: release, Image: img, Password: password, NetworkManager: networkManager, Luks: luks, GrubBIOS: grubBIOS, GrubEFI: grubEFI, Kernel: kernel}
 	var net NetworkManager
 	switch release.ID {
 	case ReleaseDebian:
