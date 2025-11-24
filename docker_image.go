@@ -125,7 +125,7 @@ func (i image) Flatten(ctx context.Context, out string) error {
 	if err := f.Close(); err != nil {
 		return err
 	}
-	if err := exec.Run(ctx, "tar", "xvf", tar, "-C", out); err != nil {
+	if err := exec.Run(ctx, "tar", "xvf", tar, "-C", out, "--xattrs", "--xattrs-include=*"); err != nil {
 		return err
 	}
 	return nil
