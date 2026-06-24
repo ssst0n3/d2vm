@@ -41,7 +41,7 @@ func testConfig(t *testing.T, ctx context.Context, name, img string, config Conf
 	if !r.SupportsLUKS() && luks {
 		t.Skipf("LUKS not supported for %s", r.Version)
 	}
-	d, err := NewDockerfile(r, img, "root", "", luks, grubBIOS, grubEFI)
+	d, err := NewDockerfile(r, img, "root", "", luks, grubBIOS, grubEFI, true)
 	require.NoError(t, err)
 	logrus.Infof("docker image based on %s", d.Release.Name)
 	p := filepath.Join(tmpPath, docker.FormatImgName(name))

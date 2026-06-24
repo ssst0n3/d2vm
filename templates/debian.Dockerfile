@@ -11,8 +11,10 @@ RUN echo "deb http://archive.debian.org/debian stretch main" > /etc/apt/sources.
 {{- end }}
 
 RUN apt-get update && \
+{{- if .Kernel }}
     DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends \
       linux-image-amd64 && \
+{{- end }}
       find /boot -type l -exec rm {} \;
 
 RUN ARCH="$([ "$(uname -m)" = "x86_64" ] && echo amd64 || echo arm64)"; \
