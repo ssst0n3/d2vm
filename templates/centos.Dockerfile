@@ -16,7 +16,9 @@ RUN yum install -y \
 {{ if le $version 8 }}
     grubby centos-linux-release \
 {{ end }}
+{{- if .Kernel }}
     kernel \
+{{- end }}
     systemd \
     NetworkManager \
 {{- if .GrubBIOS }}
@@ -42,9 +44,8 @@ RUN dracut --no-hostonly --regenerate-all --force
 {{ if .Password }}RUN echo "root:{{ .Password }}" | chpasswd {{ end }}
 
 {{- if not .Grub }}
-RUN cd /boot && \
-        mv $(find {{ if le $version 8 }}.{{ else }}/{{ end }} -name 'vmlinuz*') /boot/vmlinuz && \
-        mv $(find . -name 'initramfs-*.img') /boot/initrd.img
+RUN mv $(ls -t /boot/vmlinuz-* | head -n 1) /boot/vmlinuz && \
+      mv $(ls -t /boot/initramfs-*.img | head -n 1) /boot/initrd.img
 {{- end }}
 
 RUN yum clean all && \

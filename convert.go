@@ -66,7 +66,11 @@ func Convert(ctx context.Context, img string, opts ...ConvertOption) error {
 		if err := d.Render(f); err != nil {
 			return err
 		}
-		logrus.Infof("building kernel enabled image")
+		if o.kernel {
+			logrus.Infof("building kernel enabled image")
+		} else {
+			logrus.Infof("building image without kernel installation")
+		}
 		if err := docker.Build(ctx, o.pull, imgUUID, p, dir, o.platform); err != nil {
 			return err
 		}

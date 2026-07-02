@@ -55,6 +55,54 @@ func TestDockerfileKernelFlag(t *testing.T) {
 	}
 }
 
+// TestDockerfileKernelFlagCentOS verifies that the CentOS template honors the
+// --kernel flag: the `kernel` package is only installed when Kernel=true, and
+// the boot-file selection step uses the deterministic `ls -t | head -n1` form
+// rather than the fragile `find` form that breaks when multiple kernels are
+// installed.
+func TestDockerfileKernelFlagCentOS(t *testing.T) {
+	rel := OSRelease{ID: ReleaseCentOS, Name: "CentOS Stream", VersionID: "9", Version: "9"}
+	for _, kernel := range []bool{true, false} {
+		kernel := kernel
+		t.Run("centos_kernel_"+boolStr(kernel), func(t *testing.T) {
+			d, err := NewDockerfile(rel, "image:latest", "", NetworkManagerNone, false, false, false, kernel)
+			require.NoError(t, err)
+			var buf bytes.Buffer
+			require.NoError(t, d.Render(&buf))
+			out := buf.String()
+			assert.Contains(t, out, "yum install", "base yum install must remain")
+			assert.Contains(t, out, "ls -t /boot/vmlinuz-*", "boot selection must use deterministic ls -t form")
+			assert.NotContains(t, out, "mv $(find", "boot selection must not use the fragile find form")
+			if kernel {
+				assert.Contains(t, out, "kernel \\", "kernel package should be installed when Kernel=true")
+			} else {
+				assert.NotContains(t, out, "kernel \\", "kernel package should not be installed when Kernel=false")
+			}
+		})
+	}
+}
+
+// TestDockerfileKernelFlagAlpine verifies that the Alpine template honors the
+// --kernel flag: the `linux-virt` package is only installed when Kernel=true.
+func TestDockerfileKernelFlagAlpine(t *testing.T) {
+	rel := OSRelease{ID: ReleaseAlpine, Name: "Alpine Linux", VersionID: "3.18", Version: "3.18.0"}
+	for _, kernel := range []bool{true, false} {
+		kernel := kernel
+		t.Run("alpine_kernel_"+boolStr(kernel), func(t *testing.T) {
+			d, err := NewDockerfile(rel, "image:latest", "", NetworkManagerIfupdown2, false, false, false, kernel)
+			require.NoError(t, err)
+			var buf bytes.Buffer
+			require.NoError(t, d.Render(&buf))
+			out := buf.String()
+			if kernel {
+				assert.Contains(t, out, "linux-virt", "linux-virt should be installed when Kernel=true")
+			} else {
+				assert.NotContains(t, out, "linux-virt", "linux-virt should not be installed when Kernel=false")
+			}
+		})
+	}
+}
+
 func boolStr(b bool) string {
 	if b {
 		return "true"

@@ -4,7 +4,9 @@ USER root
 
 RUN apk add --no-cache \
       util-linux \
+{{- if .Kernel }}
       linux-virt \
+{{- end }}
 {{- if ge .Release.VersionID "3.17" }}
       busybox-openrc \
       busybox-mdev-openrc \
