@@ -44,8 +44,34 @@ RUN dracut --no-hostonly --regenerate-all --force
 {{ if .Password }}RUN echo "root:{{ .Password }}" | chpasswd {{ end }}
 
 {{- if not .Grub }}
-RUN mv $(ls -t /boot/vmlinuz-* | head -n 1) /boot/vmlinuz && \
-      mv $(ls -t /boot/initramfs-*.img | head -n 1) /boot/initrd.img
+# Select the kernel image and initramfs in a way that tolerates the
+# CentOS/RHEL layout where /boot/vmlinuz-* may be missing or a symlink
+# (removed above) and the real image lives under /usr/lib/modules/*/vmlinuz.
+RUN set -e; \
+    if [ -n "$(ls -t /boot/vmlinuz-* 2>/dev/null | head -n1)" ]; then \
+      ksrc="$(ls -t /boot/vmlinuz-* | head -n1)"; \
+    elif [ -n "$(ls -t /usr/lib/modules/*/vmlinuz 2>/dev/null | head -n1)" ]; then \
+      ksrc="$(ls -t /usr/lib/modules/*/vmlinuz | head -n1)"; \
+    else \
+      echo "d2vm: kernel image not found in /boot/vmlinuz-* or /usr/lib/modules/*/vmlinuz" >&2; \
+      exit 1; \
+    fi; \
+    case "$ksrc" in \
+      /boot/vmlinuz-*) kver="${ksrc#/boot/vmlinuz-}" ;; \
+      */vmlinuz)        kver="$(basename "$(dirname "$ksrc")")" ;; \
+      *)                kver="" ;; \
+    esac; \
+    cp -f "$ksrc" /boot/vmlinuz; \
+    if [ -n "$(ls -t /boot/initramfs-*.img 2>/dev/null | head -n1)" ]; then \
+      isrc="$(ls -t /boot/initramfs-*.img | head -n1)"; \
+    elif command -v dracut >/dev/null 2>&1 && [ -n "$kver" ]; then \
+      isrc="/boot/initramfs-${kver}.img"; \
+      dracut --no-hostonly --force "$isrc" "$kver"; \
+    else \
+      echo "d2vm: initramfs not found in /boot/initramfs-*.img and dracut unavailable" >&2; \
+      exit 1; \
+    fi; \
+    cp -f "$isrc" /boot/initrd.img
 {{- end }}
 
 RUN yum clean all && \

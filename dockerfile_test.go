@@ -71,8 +71,14 @@ func TestDockerfileKernelFlagCentOS(t *testing.T) {
 			require.NoError(t, d.Render(&buf))
 			out := buf.String()
 			assert.Contains(t, out, "yum install", "base yum install must remain")
-			assert.Contains(t, out, "ls -t /boot/vmlinuz-*", "boot selection must use deterministic ls -t form")
+			assert.Contains(t, out, "ls -t /boot/vmlinuz-*", "boot selection must prefer /boot/vmlinuz-*")
 			assert.NotContains(t, out, "mv $(find", "boot selection must not use the fragile find form")
+			// CentOS/RHEL images may only ship the kernel under /usr/lib/modules/*/vmlinuz,
+			// so the template must fall back to that path and synthesize an initramfs with
+			// dracut when /boot/initramfs-*.img is absent.
+			assert.Contains(t, out, "/usr/lib/modules/*/vmlinuz", "must fall back to /usr/lib/modules/*/vmlinuz")
+			assert.Contains(t, out, "dracut --no-hostonly --force", "must regenerate initramfs with dracut when missing")
+			assert.Contains(t, out, "kernel image not found", "must emit a clear error when no kernel artifact is present")
 			if kernel {
 				assert.Contains(t, out, "kernel \\", "kernel package should be installed when Kernel=true")
 			} else {
